@@ -1,0 +1,80 @@
+name: Update WakaTime Top 7 Languages in README
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch WakaTime stats
+        env:
+          WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
+        run: |
+          curl -s -u $WAKATIME_API_KEY: \
+            "https://wakatime.com/api/v1/users/current/stats/last_7_days" \
+            -o wakatime.json
+
+      - name: Generate Top 7 languages section
+        run: |
+          LANGS=$(jq -r '.data.languages | sort_by(.total_seconds) | reverse | .[:7][] | "\(.name)\t\(.total_seconds)"' wakatime.json)
+          MAX=$(echo "$LANGS" | awk -F'\t' '{print $2}' | sort -nr | head -1)
+          MAX_NAME_LEN=$(echo "$LANGS" | awk -F'\t' '{print length($1)}' | sort -nr | head -1)
+          BAR_LEN=20
+          
+          echo "#### Recent Status" > waka.md
+          echo "" >> waka.md
+          echo '```text' >> waka.md
+          
+          while IFS=$'\t' read -r NAME TIME; do
+            PERC=$(awk -v t=$TIME -v m=$MAX 'BEGIN{printf "%.0f", (t/m)*100}')
+            FILLED=$((PERC*BAR_LEN/100))
+            EMPTY=$((BAR_LEN-FILLED))
+            BAR=$(printf "%0.s█" $(seq 1 $FILLED))$(printf "%0.s░" $(seq 1 $EMPTY))
+            HOURS=$(awk -v t=$TIME 'BEGIN{printf "%.1f", t/3600}')
+            NAME_PAD=$(printf "%-${MAX_NAME_LEN}s" "$NAME")
+            echo "$NAME_PAD $BAR $HOURS h" >> waka.md
+          done <<< "$LANGS"
+          
+          echo '```' >> waka.md
+
+      - name: Update README.md
+        run: |
+          awk '
+            BEGIN {inside=0}
+            /<!--START_SECTION:waka-->/ {print; inside=1; next}
+            /<!--END_SECTION:waka-->/ {inside=0; print; next}
+            !inside {print}
+            inside && !/<!--START_SECTION:waka-->/ && !/<!--END_SECTION:waka-->/ {next}
+          ' README.md | awk '
+            BEGIN {inserted=0}
+            /<!--START_SECTION:waka-->/ {
+              print
+              while((getline line < "waka.md") > 0) print line
+              inserted=1
+              next
+            }
+            {print}
+          ' > README.tmp
+          mv README.tmp README.md
+
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add README.md
+          git commit -m "Update WakaTime stats in README" || echo "No changes to commit"
+          git push
