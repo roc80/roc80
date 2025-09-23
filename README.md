@@ -15,6 +15,6 @@ TypeScript ▓░░░░░░░░░░░░░░░░░░░░ 0.3 h
 <!--END_SECTION:waka-->
 
 ### 🛠️ Skills
-- Java (Junior)
-- Vue | Vite | Vant UI
+- Java
+- Vue | Vite
 - Ant Design Pro
