@@ -42,7 +42,7 @@ jobs:
             PERC=$(awk -v t=$TIME -v m=$MAX 'BEGIN{printf "%.0f", (t/m)*100}')
             FILLED=$((PERC*BAR_LEN/100))
             EMPTY=$((BAR_LEN-FILLED))
-            BAR=$(printf "%0.s█" $(seq 1 $FILLED))$(printf "%0.s░" $(seq 1 $EMPTY))
+            BAR=$(printf "%0.s▓" $(seq 1 $FILLED))$(printf "%0.s░" $(seq 1 $EMPTY))
             HOURS=$(awk -v t=$TIME 'BEGIN{printf "%.1f", t/3600}')
             NAME_PAD=$(printf "%-${MAX_NAME_LEN}s" "$NAME")
             echo "$NAME_PAD $BAR $HOURS h" >> waka.md
