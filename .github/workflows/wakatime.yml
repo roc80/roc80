@@ -73,8 +73,28 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add README.md
-          git commit -m "Update WakaTime stats in README" || echo "No changes to commit"
-          git push
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 调试信息
+          echo "=== Git Status ==="
+          git status
+          echo "=== README.md Changes ==="
+          git diff README.md || echo "No diff to show"
+          
+          # 检查是否有实际变更
+          if [[ -n $(git status --porcelain README.md) ]]; then
+            echo "✅ Changes detected in README.md"
+            git add README.md
+            git commit -m "Update WakaTime stats - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          
+            # 推送时添加错误处理
+            if git push; then
+              echo "✅ Changes committed and pushed successfully"
+            else
+              echo "❌ Failed to push changes"
+              exit 1
+            fi
+          else
+            echo "ℹ️ No changes in README.md to commit"
+          fi
