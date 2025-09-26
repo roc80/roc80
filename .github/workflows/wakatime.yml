@@ -2,7 +2,7 @@ name: Update WakaTime Top 7 Languages in README
 
 on:
   schedule:
-    - cron: '0 16 * * *' # UTC16:00 东八区0:00
+    - cron: '30 0 * * *'
   push:
     branches:
       - master
