@@ -29,25 +29,33 @@ jobs:
 
       - name: Generate Top 7 languages section
         run: |
-          LANGS=$(jq -r '.data.languages | sort_by(.total_seconds) | reverse | .[:7][] | "\(.name)\t\(.total_seconds)"' wakatime.json)
-          MAX=$(echo "$LANGS" | awk -F'\t' '{print $2}' | sort -nr | head -1)
-          MAX_NAME_LEN=$(echo "$LANGS" | awk -F'\t' '{print length($1)}' | sort -nr | head -1)
-          BAR_LEN=20
-          
+          # 用 // [] 兜底：当 .data.languages 为 null 或不存在时返回空数组，避免 jq 报错
+          LANGS=$(jq -r '.data.languages // [] | sort_by(.total_seconds) | reverse | .[:7][] | "\(.name)\t\(.total_seconds)"' wakatime.json 2>/dev/null || true)
+
           echo "#### Recent Status" > waka.md
           echo "" >> waka.md
           echo '```text' >> waka.md
-          
-          while IFS=$'\t' read -r NAME TIME; do
-            PERC=$(awk -v t=$TIME -v m=$MAX 'BEGIN{printf "%.0f", (t/m)*100}')
-            FILLED=$((PERC*BAR_LEN/100))
-            EMPTY=$((BAR_LEN-FILLED))
-            BAR=$(printf "%0.s▓" $(seq 1 $FILLED))$(printf "%0.s░" $(seq 1 $EMPTY))
-            HOURS=$(awk -v t=$TIME 'BEGIN{printf "%.1f", t/3600}')
-            NAME_PAD=$(printf "%-${MAX_NAME_LEN}s" "$NAME")
-            echo "$NAME_PAD $BAR $HOURS h" >> waka.md
-          done <<< "$LANGS"
-          
+
+          # 去除首尾空白后判断是否为空（WakaTime 拉不到数据时不让脚本崩）
+          if [[ -z "$(echo "$LANGS" | tr -d '[:space:]')" ]]; then
+            echo "No coding activity in the last 7 days" >> waka.md
+          else
+            MAX=$(echo "$LANGS" | awk -F'\t' '{print $2}' | sort -nr | head -1)
+            MAX_NAME_LEN=$(echo "$LANGS" | awk -F'\t' '{print length($1)}' | sort -nr | head -1)
+            BAR_LEN=20
+
+            while IFS=$'\t' read -r NAME TIME; do
+              [[ -z "$NAME" ]] && continue
+              PERC=$(awk -v t="$TIME" -v m="$MAX" 'BEGIN{printf "%.0f", (t/m)*100}')
+              FILLED=$((PERC*BAR_LEN/100))
+              EMPTY=$((BAR_LEN-FILLED))
+              BAR=$(printf "%0.s▓" $(seq 1 $FILLED))$(printf "%0.s░" $(seq 1 $EMPTY))
+              HOURS=$(awk -v t="$TIME" 'BEGIN{printf "%.1f", t/3600}')
+              NAME_PAD=$(printf "%-${MAX_NAME_LEN}s" "$NAME")
+              echo "$NAME_PAD $BAR $HOURS h" >> waka.md
+            done <<< "$LANGS"
+          fi
+
           echo '```' >> waka.md
 
       - name: Update README.md
