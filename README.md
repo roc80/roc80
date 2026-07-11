@@ -4,7 +4,7 @@
 #### Recent Status
 
 ```text
-Other ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 0.2 h
+No coding activity in the last 7 days
 ```
 <!--END_SECTION:waka-->
 
