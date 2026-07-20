@@ -4,7 +4,7 @@
 #### Recent Status
 
 ```text
-YAML ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 0.1 h
+No coding activity in the last 7 days
 ```
 <!--END_SECTION:waka-->
 
